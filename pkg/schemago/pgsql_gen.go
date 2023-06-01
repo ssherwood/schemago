@@ -5,10 +5,10 @@ import (
 	"strings"
 )
 
-func GenerateSQLStatements(schema []Table) string {
+func GenerateSQLStatements(schema Schema) string {
 	sql := ""
 
-	for _, table := range schema {
+	for _, table := range schema.Tables {
 		sql += fmt.Sprintf("\nCREATE TABLE%s%s(\n%s%s%s\n);\n%s",
 			" IF NOT EXISTS ",
 			table.Name,

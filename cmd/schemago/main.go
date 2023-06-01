@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	fmt.Println("Schema Go!")
+	fmt.Println("SchemaGo!")
 
 	numTables := flag.Int("tables", 10, "Number of tables to generate")
 	maxColumns := flag.Int("maxcols", 10, "Maximum number of columns to generate per table")

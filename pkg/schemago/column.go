@@ -1,10 +1,6 @@
 package schemago
 
-import (
-	"fmt"
-	"github.com/Pallinder/go-randomdata"
-	"math/rand"
-)
+import "math/rand"
 
 type Column struct {
 	Name     string
@@ -22,28 +18,26 @@ func randomColumns(maxColumns int) map[string]Column {
 	for i := 0; i < numColumns; i++ {
 		attrName := randomColumnName()
 		attrType, attrLength, attrDefault := randomDataType()
-		attrNullable := randomNullable(attrType)
-
 		columns[attrName] = Column{
 			Name:     attrName,
 			Type:     attrType,
 			Length:   attrLength,
 			Default:  attrDefault,
-			Nullable: attrNullable,
+			Nullable: randomNullable(attrType),
 		}
 	}
 
 	return columns
 }
 
-func randomColumnName() string {
-	r := rand.Intn(100)
-
-	if r < 60 {
-		return randomdata.Noun()
-	} else if r < 90 {
-		return fmt.Sprintf("%s_%s", randomdata.Adjective(), randomdata.Noun())
-	} else {
-		return fmt.Sprintf("%s_%s_%s", randomdata.Adjective(), randomdata.Noun(), randomdata.Adjective())
+func randomColumnName() (columnName string) {
+	switch r := rand.Intn(100); {
+	case r < 60:
+		columnName = randomDescriptor(1, "")
+	case r < 90:
+		columnName = randomDescriptor(2, "_")
+	default:
+		columnName = randomDescriptor(3, "_")
 	}
+	return
 }

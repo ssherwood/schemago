@@ -1,16 +1,29 @@
 package schemago
 
-import (
-	"math/rand"
-)
+type Schema struct {
+	Name        string
+	Tables      []Table
+	ForeignKeys []ForeignKey
+}
 
-func CreateSchema(numTables int, maxColumns int) []Table {
-	var schema []Table
+// CreateSchema generates a certain number of tables with randomized columns and data types.
+// provide the numTables to generate and the max possible number of columns on any one table.
+func CreateSchema(numTables int, maxColumns int) Schema {
+	tables := randomTables(numTables, maxColumns)
 
+	return Schema{
+		Name:        "",
+		Tables:      tables,
+		ForeignKeys: generateForeignKeys(tables, 100),
+	}
+}
+
+func randomTables(numTables int, maxColumns int) []Table {
+	var tables []Table
 	for i := 0; i < numTables; i++ {
 		tableName := randomTableName()
 		attributes := randomColumns(maxColumns)
-		schema = append(schema, Table{
+		tables = append(tables, Table{
 			Name:        tableName,
 			PrimaryKeys: randomPrimaryKey(),
 			Columns:     attributes,
@@ -18,26 +31,5 @@ func CreateSchema(numTables int, maxColumns int) []Table {
 		})
 	}
 
-	return schema
-}
-
-func randomPrimaryKey() []Column {
-	// TODO sometimes we should generate composite PKs
-
-	var dataType string
-	if rand.Intn(100) < 25 {
-		dataType = "BIGSERIAL"
-	} else {
-		dataType = "UUID"
-	}
-
-	return []Column{
-		{
-			Name:     "id",
-			Type:     dataType,
-			Length:   0,
-			Default:  "",
-			Nullable: false,
-		},
-	}
+	return tables
 }

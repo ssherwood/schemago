@@ -1,14 +1,12 @@
 package schemago
 
-import "github.com/Pallinder/go-randomdata"
-
 type Table struct {
 	Name        string
-	PrimaryKeys []Column
+	PrimaryKeys []PrimaryKey
 	Columns     map[string]Column
 	Indexes     []Index
 }
 
 func randomTableName() string {
-	return randomdata.Adjective() + "_" + randomdata.Noun()
+	return randomDescriptor(2, "_")
 }
