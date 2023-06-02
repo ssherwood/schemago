@@ -1,5 +1,7 @@
 package schemago
 
+import "math/rand"
+
 type Table struct {
 	Name        string
 	PrimaryKeys []PrimaryKey
@@ -7,6 +9,30 @@ type Table struct {
 	Indexes     []Index
 }
 
-func randomTableName() string {
-	return randomDescriptor(2, "_")
+func randomTables(numTables int, maxColumns int) []Table {
+	var tables []Table
+	for i := 0; i < numTables; i++ {
+		tableName := randomTableName()
+		attributes := randomColumns(maxColumns)
+
+		tables = append(tables, Table{
+			Name:        tableName,
+			PrimaryKeys: randomPrimaryKey(),
+			Columns:     attributes,
+			Indexes:     randomIndexes(tableName, attributes),
+		})
+	}
+	return tables
+}
+
+func randomTableName() (tableName string) {
+	switch r := rand.Intn(100); {
+	case r < 25:
+		tableName = randomDescriptor(1, "")
+	case r < 95:
+		tableName = randomDescriptor(2, "_")
+	default:
+		tableName = randomDescriptor(3, "_")
+	}
+	return
 }

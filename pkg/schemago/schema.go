@@ -12,24 +12,8 @@ func CreateSchema(numTables int, maxColumns int) Schema {
 	tables := randomTables(numTables, maxColumns)
 
 	return Schema{
-		Name:        "",
+		Name:        "public",
 		Tables:      tables,
 		ForeignKeys: generateForeignKeys(tables, 30),
 	}
-}
-
-func randomTables(numTables int, maxColumns int) []Table {
-	var tables []Table
-	for i := 0; i < numTables; i++ {
-		tableName := randomTableName()
-		attributes := randomColumns(maxColumns)
-		tables = append(tables, Table{
-			Name:        tableName,
-			PrimaryKeys: randomPrimaryKey(),
-			Columns:     attributes,
-			Indexes:     randomIndexes(tableName, attributes),
-		})
-	}
-
-	return tables
 }
