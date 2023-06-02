@@ -9,13 +9,17 @@ func GenerateSQLStatements(schema Schema) string {
 	sql := ""
 
 	for _, table := range schema.Tables {
-		sql += fmt.Sprintf("\nCREATE TABLE%s%s(\n%s%s%s\n);\n%s",
+		sql += fmt.Sprintf("\nCREATE TABLE%s%s(\n%s%s%s\n);\n%s\n",
 			" IF NOT EXISTS ",
 			table.Name,
 			generatePrimaryKeys(table),
 			generateColumns(table),
 			generatePrimaryKeyConstraints(table),
 			generateCreateIndexes(table))
+	}
+
+	if len(schema.ForeignKeys) > 0 {
+		sql += generateForeignKeyConstraints(schema.ForeignKeys)
 	}
 
 	return sql
@@ -106,6 +110,25 @@ func generateCreateIndexes(table Table) string {
 
 			sql += fmt.Sprintf("CREATE %sINDEX %s ON %s(%s);\n", unique, v.Name, v.TableName, strings.Join(cols, ","))
 		}
+	}
+
+	return sql
+}
+
+// ALTER TABLE child_table
+//  ADD CONSTRAINT constraint_name
+//    FOREIGN KEY (fk_columns)
+//      REFERENCES parent_table (parent_key_columns);
+
+func generateForeignKeyConstraints(foreignKeys []ForeignKey) string {
+	sql := ""
+
+	for _, fk := range foreignKeys {
+		sql += fmt.Sprintf("\nALTER TABLE %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s (%s);\n",
+			fk.ChildTableName, fk.Name,
+			strings.Join(fk.ChildTableColumns, ", "),
+			fk.ParentTableName,
+			strings.Join(fk.ParentTableColumns, ", "))
 	}
 
 	return sql

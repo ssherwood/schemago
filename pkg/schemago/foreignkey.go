@@ -2,15 +2,13 @@ package schemago
 
 import (
 	"errors"
+	"fmt"
 	"math/rand"
+	"strings"
 )
 
-// ALTER TABLE child_table
-//  ADD CONSTRAINT constraint_name
-//    FOREIGN KEY (fk_columns)
-//      REFERENCES parent_table (parent_key_columns);
-
 type ForeignKey struct {
+	Name               string
 	ChildTableName     string
 	ChildTableColumns  []string
 	ParentTableName    string
@@ -24,24 +22,42 @@ func generateForeignKeys(tables []Table, percentage int) []ForeignKey {
 	numForeignKeys := (numTables * percentage) / 100
 
 	for i := 0; i < numForeignKeys; i++ {
+		parentTable := tables[rand.Intn(numTables)]
 		childTable := tables[rand.Intn(numTables)]
-		childColumn, ok := randomColumn(childTable.Columns)
-		for ok != nil {
-			for j := 0; j < 100; j++ {
-				childColumn, ok = randomColumn(childTable.Columns)
+
+		for childTable.Name == parentTable.Name {
+			// don't connect to ourselves
+			childTable = tables[rand.Intn(numTables)]
+		}
+
+		var childFKColumns []Column
+		for _, col := range parentTable.PrimaryKeys {
+			var columnName string
+			if col.Name == "id" {
+				columnName = fmt.Sprintf("%s_id", parentTable.Name)
+			} else {
+				columnName = col.Name
 			}
 
-			if ok != nil {
-				// escape, we cant generate proper keys
-				return foreignKeys
+			childTableColumn := Column{
+				Name:     columnName,
+				Type:     col.Type,
+				Length:   col.Length,
+				Default:  col.Default,
+				Nullable: false,
+				Unique:   false,
 			}
+
+			childTable.Columns[columnName] = childTableColumn // add it to the child table
+			childFKColumns = append(childFKColumns, childTableColumn)
 		}
 
 		foreignKeys = append(foreignKeys, ForeignKey{
+			Name:               fmt.Sprintf("%s_%s_fk", parentTable.Name, strings.Join(primaryKeyNames(parentTable.PrimaryKeys, false), "_")),
 			ChildTableName:     childTable.Name,
-			ChildTableColumns:  []string{childColumn.Name},
-			ParentTableName:    "", // TODO
-			ParentTableColumns: nil,
+			ChildTableColumns:  columnsByName(childFKColumns, true),
+			ParentTableName:    parentTable.Name,
+			ParentTableColumns: primaryKeyNames(parentTable.PrimaryKeys, false),
 		})
 	}
 

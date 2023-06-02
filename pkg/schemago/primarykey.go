@@ -3,6 +3,7 @@ package schemago
 import (
 	"fmt"
 	"math/rand"
+	"sort"
 )
 
 type PrimaryKey struct {
@@ -10,6 +11,19 @@ type PrimaryKey struct {
 	Type    string
 	Length  int
 	Default string
+}
+
+func primaryKeyNames(primaryKeys []PrimaryKey, sorted bool) []string {
+	var names []string
+	for _, v := range primaryKeys {
+		names = append(names, v.Name)
+	}
+
+	if sorted {
+		sort.Strings(names)
+	}
+
+	return names
 }
 
 func randomPrimaryKey() []PrimaryKey {

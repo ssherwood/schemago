@@ -7,10 +7,8 @@ import (
 )
 
 func main() {
-	fmt.Println("SchemaGo!")
-
 	numTables := flag.Int("tables", 10, "Number of tables to generate")
-	maxColumns := flag.Int("maxcols", 10, "Maximum number of columns to generate per table")
+	maxColumns := flag.Int("columns", 10, "Maximum number of columns to generate per table")
 	flag.Parse()
 
 	schema := schemago.CreateSchema(*numTables, *maxColumns)

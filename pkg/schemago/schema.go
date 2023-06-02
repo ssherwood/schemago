@@ -14,7 +14,7 @@ func CreateSchema(numTables int, maxColumns int) Schema {
 	return Schema{
 		Name:        "",
 		Tables:      tables,
-		ForeignKeys: generateForeignKeys(tables, 100),
+		ForeignKeys: generateForeignKeys(tables, 30),
 	}
 }
 
