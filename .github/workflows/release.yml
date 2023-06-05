@@ -12,6 +12,9 @@ jobs:
       matrix:
         goos: [linux, darwin]
         goarch: [amd64, arm64]
+    permissions:
+      contents: write
+      packages: write
     steps:
       - uses: actions/checkout@v3
       - uses: wangyoucao577/go-release-action@v1
