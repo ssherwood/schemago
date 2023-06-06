@@ -7,21 +7,27 @@ import (
 	"strings"
 )
 
-const createTableFmt string = "\nCREATE TABLE IF NOT EXISTS %s.%s(\n%s%s%s\n);\n%s\n"
-const createForeignKeyFmt string = "\nALTER TABLE %s.%s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s.%s(%s);"
 const commaSeparator string = ", "
+const createTableFmt string = "\nCREATE TABLE IF NOT EXISTS %s.%s(\n%s%s%s\n);\n\n%s"
+const createForeignKeyFmt string = "\nALTER TABLE %s.%s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s.%s(%s);"
+const createIndexFmt string = "CREATE %sINDEX %s ON %s.%s(%s);\n"
 
-func WriteSQLStatements(output io.Writer, schema Schema) error {
+func WriteSQLStatements(writer io.Writer, schema Schema) error {
 	for _, table := range schema.Tables {
-		_, err := fmt.Fprintf(output, createTableFmt, schema.Name, table.Name, generatePrimaryKeys(table), generateColumns(table), generatePrimaryKeyConstraints(table), generateCreateIndexes(schema.Name, table))
+		_, err := fmt.Fprintf(writer, createTableFmt,
+			schema.Name, table.Name,
+			primaryKeys(table),
+			generateColumns(table),
+			primaryKeyConstraints(table),
+			createIndexes(schema.Name, table))
+
 		if err != nil {
 			return err
 		}
 	}
 
 	if len(schema.ForeignKeys) > 0 {
-		err := writeForeignKeyConstraints(output, schema)
-		if err != nil {
+		if err := writeForeignKeyConstraints(writer, schema); err != nil {
 			return err
 		}
 	}
@@ -29,7 +35,7 @@ func WriteSQLStatements(output io.Writer, schema Schema) error {
 	return nil
 }
 
-func generatePrimaryKeys(table Table) (sql string) {
+func primaryKeys(table Table) (sql string) {
 	if len(table.PrimaryKeys) == 1 {
 		sql += fmt.Sprintf("\t%s %s PRIMARY KEY,\n", table.PrimaryKeys[0].Name, table.PrimaryKeys[0].Type)
 	} else {
@@ -70,8 +76,8 @@ func generateColumns(table Table) (sql string) {
 	return
 }
 
-func generatePrimaryKeyConstraints(table Table) (sql string) {
-	// only done if there are multiple PKs
+func primaryKeyConstraints(table Table) (sql string) {
+	// only generated if there are multiple PKs
 	if len(table.PrimaryKeys) > 1 {
 		var pkNames []string
 		for _, pk := range table.PrimaryKeys {
@@ -80,10 +86,11 @@ func generatePrimaryKeyConstraints(table Table) (sql string) {
 
 		sql += fmt.Sprintf(",\n\tPRIMARY KEY(%s)", strings.Join(pkNames, ","))
 	}
+
 	return
 }
 
-func generateCreateIndexes(schemaName string, table Table) (sql string) {
+func createIndexes(schemaName string, table Table) (sql string) {
 	for _, index := range table.Indexes {
 		var columnNames []string
 		for i, columnName := range index.ColumnNames {
@@ -99,8 +106,9 @@ func generateCreateIndexes(schemaName string, table Table) (sql string) {
 			unique = "UNIQUE "
 		}
 
-		sql += fmt.Sprintf("\nCREATE %sINDEX %s ON %s.%s(%s);", unique, index.Name, schemaName, index.TableName, strings.Join(columnNames, ","))
+		sql += fmt.Sprintf(createIndexFmt, unique, index.Name, schemaName, index.TableName, strings.Join(columnNames, commaSeparator))
 	}
+
 	return
 }
 

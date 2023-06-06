@@ -14,25 +14,25 @@ func main() {
 	maxColumns := flag.Int("columns", 10, "Maximum number of columns to generate per table")
 	flag.Parse()
 
+	// 	go func() {
+	//		log.Println(http.ListenAndServe("localhost:6060", nil))
+	//	}()
+	//
+	//	// Trigger CPU profiling
+	//	cpuProfileFile, err := os.Create("cpu.prof")
+	//	if err != nil {
+	//		log.Fatal(err)
+	//	}
+	//	defer cpuProfileFile.Close()
+	//
+	//	if err := pprof.StartCPUProfile(cpuProfileFile); err != nil {
+	//		log.Fatal(err)
+	//	}
+	//	defer pprof.StopCPUProfile()
+
 	schema := schemago.CreateSchema(*numTables, *maxColumns)
 	err := schemago.WriteSQLStatements(os.Stdout, schema)
 	if err != nil {
 		log.Fatal("Error:", err)
 	}
 }
-
-// 	go func() {
-//		log.Println(http.ListenAndServe("localhost:6060", nil))
-//	}()
-//
-//	// Trigger CPU profiling
-//	cpuProfileFile, err := os.Create("cpu.prof")
-//	if err != nil {
-//		log.Fatal(err)
-//	}
-//	defer cpuProfileFile.Close()
-//
-//	if err := pprof.StartCPUProfile(cpuProfileFile); err != nil {
-//		log.Fatal(err)
-//	}
-//	defer pprof.StopCPUProfile()
