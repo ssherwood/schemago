@@ -2,29 +2,31 @@ package schemago
 
 import (
 	"fmt"
+	"io"
 	"sort"
 	"strings"
 )
 
-func GenerateSQLStatements(schema Schema) string {
-	sql := ""
+const createTableFmt string = "\nCREATE TABLE IF NOT EXISTS %s.%s(\n%s%s%s\n);\n%s\n"
+const createForeignKeyFmt string = "\nALTER TABLE %s.%s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s.%s(%s);"
+const commaSeparator string = ", "
 
+func WriteSQLStatements(output io.Writer, schema Schema) error {
 	for _, table := range schema.Tables {
-		sql += fmt.Sprintf("\nCREATE TABLE%s%s.%s(\n%s%s%s\n);\n%s\n",
-			" IF NOT EXISTS ",
-			schema.Name,
-			table.Name,
-			generatePrimaryKeys(table),
-			generateColumns(table),
-			generatePrimaryKeyConstraints(table),
-			generateCreateIndexes(schema.Name, table))
+		_, err := fmt.Fprintf(output, createTableFmt, schema.Name, table.Name, generatePrimaryKeys(table), generateColumns(table), generatePrimaryKeyConstraints(table), generateCreateIndexes(schema.Name, table))
+		if err != nil {
+			return err
+		}
 	}
 
 	if len(schema.ForeignKeys) > 0 {
-		sql += generateForeignKeyConstraints(schema)
+		err := writeForeignKeyConstraints(output, schema)
+		if err != nil {
+			return err
+		}
 	}
 
-	return sql
+	return nil
 }
 
 func generatePrimaryKeys(table Table) (sql string) {
@@ -102,8 +104,7 @@ func generateCreateIndexes(schemaName string, table Table) (sql string) {
 	return
 }
 
-func generateForeignKeyConstraints(schema Schema) (sql string) {
-
+func writeForeignKeyConstraints(output io.Writer, schema Schema) error {
 	// sort by child table to keep ALTER TABLE statements together
 	foreignKeys := schema.ForeignKeys
 	sort.Slice(foreignKeys, func(i, j int) bool {
@@ -111,15 +112,19 @@ func generateForeignKeyConstraints(schema Schema) (sql string) {
 	})
 
 	for _, foreignKey := range foreignKeys {
-		// TODO ON DELETE ?
-		sql += fmt.Sprintf("\nALTER TABLE %s.%s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s.%s(%s);\n",
+		_, err := fmt.Fprintf(output, createForeignKeyFmt,
 			schema.Name,
 			foreignKey.ChildTableName,
 			foreignKey.Name,
-			strings.Join(foreignKey.ChildTableColumns, ", "),
+			strings.Join(foreignKey.ChildTableColumns, commaSeparator),
 			schema.Name,
 			foreignKey.ParentTableName,
-			strings.Join(foreignKey.ParentTableColumns, ", "))
+			strings.Join(foreignKey.ParentTableColumns, commaSeparator))
+
+		if err != nil {
+			return err
+		}
 	}
-	return
+
+	return nil
 }
