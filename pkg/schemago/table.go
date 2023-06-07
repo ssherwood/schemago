@@ -9,11 +9,11 @@ type Table struct {
 	Indexes     []Index
 }
 
-func randomTables(numTables int, maxColumns int) []Table {
+func randomTables(numTables int, maxColumns int, enums []Enum) []Table {
 	var tables []Table
 	for i := 0; i < numTables; i++ {
 		tableName := randomTableName()
-		attributes := randomColumns(maxColumns)
+		attributes := randomColumns(maxColumns, enums)
 
 		tables = append(tables, Table{
 			Name:        tableName,

@@ -3,35 +3,115 @@ package schemago
 import (
 	"fmt"
 	"io"
-	"sort"
 	"strings"
 )
 
 const commaSeparator string = ", "
-const createTableFmt string = "\nCREATE TABLE IF NOT EXISTS %s.%s(\n%s%s%s\n);\n\n%s"
-const createForeignKeyFmt string = "\nALTER TABLE %s.%s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s.%s(%s);"
+const createEnumFmt string = "CREATE TYPE %s.%s as ENUM(%s);\n"
+const createTableFmt string = "CREATE TABLE IF NOT EXISTS %s.%s(\n%s%s%s\n);\n\n"
 const createIndexFmt string = "CREATE %sINDEX %s ON %s.%s(%s);\n"
+const createForeignKeyFmt string = "ALTER TABLE %s.%s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s.%s(%s);\n"
 
+// WriteSQLStatements prints all the DDL needed to create the schema in the target database (today that is just
+// PostgresSQL).
 func WriteSQLStatements(writer io.Writer, schema Schema) error {
-	for _, table := range schema.Tables {
-		_, err := fmt.Fprintf(writer, createTableFmt,
-			schema.Name, table.Name,
-			primaryKeys(table),
-			generateColumns(table),
-			primaryKeyConstraints(table),
-			createIndexes(schema.Name, table))
+	if err := writeCreateTypeEnums(writer, schema.Name, schema.Enums); err != nil {
+		return err
+	}
 
+	if err := writeCreateTables(writer, schema.Name, schema.Tables); err != nil {
+		return err
+	}
+
+	if err := writeAlterTableAddConstraints(writer, schema.Name, schema.ForeignKeys); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func writeCreateTypeEnums(output io.Writer, schemaName string, enums []Enum) error {
+	sortEnumsByName(enums)
+	for _, e := range enums {
+		_, err := fmt.Fprintf(output, createEnumFmt, schemaName, e.Name, "'"+strings.Join(e.Values, "', '")+"'")
 		if err != nil {
 			return err
 		}
 	}
 
-	if len(schema.ForeignKeys) > 0 {
-		if err := writeForeignKeyConstraints(writer, schema); err != nil {
+	if len(enums) > 0 {
+		if _, err := fmt.Fprintln(output); err != nil {
 			return err
 		}
 	}
 
+	return nil
+}
+
+func writeCreateTables(writer io.Writer, schemaName string, tables []Table) error {
+	// TODO should we sort these?
+	for _, table := range tables {
+		_, err := fmt.Fprintf(writer, createTableFmt, schemaName, table.Name, primaryKeys(table), columns(table), primaryKeyConstraints(table))
+		if err != nil {
+			return err
+		}
+
+		if err = writeCreateIndexes(writer, schemaName, table.Indexes); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func writeCreateIndexes(writer io.Writer, schemaName string, indexes []Index) error {
+	// TODO sort index names?
+	for _, index := range indexes {
+		var columnNames []string
+		for i, columnName := range index.ColumnNames {
+			if len(index.Ordering[i]) > 0 {
+				columnNames = append(columnNames, fmt.Sprintf("%s %s", columnName, index.Ordering[i]))
+			} else {
+				columnNames = append(columnNames, columnName) // HASH is implied
+			}
+		}
+
+		unique := ""
+		if index.Unique {
+			unique = "UNIQUE "
+		}
+
+		_, err := fmt.Fprintf(writer, createIndexFmt, unique, index.Name, schemaName, index.TableName, strings.Join(columnNames, commaSeparator))
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(indexes) > 0 {
+		if _, err := fmt.Fprintln(writer); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func writeAlterTableAddConstraints(output io.Writer, schemaName string, foreignKeys []ForeignKey) error {
+	sortForeignKeysByName(foreignKeys)
+	for _, foreignKey := range foreignKeys {
+		_, err := fmt.Fprintf(output, createForeignKeyFmt,
+			schemaName,
+			foreignKey.ChildTableName,
+			foreignKey.Name,
+			strings.Join(foreignKey.ChildTableColumns, commaSeparator),
+			schemaName,
+			foreignKey.ParentTableName,
+			strings.Join(foreignKey.ParentTableColumns, commaSeparator))
+
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -46,7 +126,7 @@ func primaryKeys(table Table) (sql string) {
 	return
 }
 
-func generateColumns(table Table) (sql string) {
+func columns(table Table) (sql string) {
 	currentItem := 0
 	for _, col := range table.Columns {
 		sql += fmt.Sprintf("\t%s %s", col.Name, col.Type)
@@ -88,51 +168,4 @@ func primaryKeyConstraints(table Table) (sql string) {
 	}
 
 	return
-}
-
-func createIndexes(schemaName string, table Table) (sql string) {
-	for _, index := range table.Indexes {
-		var columnNames []string
-		for i, columnName := range index.ColumnNames {
-			if len(index.Ordering[i]) > 0 {
-				columnNames = append(columnNames, fmt.Sprintf("%s %s", columnName, index.Ordering[i]))
-			} else {
-				columnNames = append(columnNames, columnName) // HASH is implied
-			}
-		}
-
-		unique := ""
-		if index.Unique {
-			unique = "UNIQUE "
-		}
-
-		sql += fmt.Sprintf(createIndexFmt, unique, index.Name, schemaName, index.TableName, strings.Join(columnNames, commaSeparator))
-	}
-
-	return
-}
-
-func writeForeignKeyConstraints(output io.Writer, schema Schema) error {
-	// sort by child table to keep ALTER TABLE statements together
-	foreignKeys := schema.ForeignKeys
-	sort.Slice(foreignKeys, func(i, j int) bool {
-		return foreignKeys[i].ChildTableName < foreignKeys[j].ChildTableName
-	})
-
-	for _, foreignKey := range foreignKeys {
-		_, err := fmt.Fprintf(output, createForeignKeyFmt,
-			schema.Name,
-			foreignKey.ChildTableName,
-			foreignKey.Name,
-			strings.Join(foreignKey.ChildTableColumns, commaSeparator),
-			schema.Name,
-			foreignKey.ParentTableName,
-			strings.Join(foreignKey.ParentTableColumns, commaSeparator))
-
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }

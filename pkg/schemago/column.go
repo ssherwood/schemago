@@ -27,13 +27,20 @@ func columnsByName(columns []Column, sorted bool) []string {
 	return columnNames
 }
 
-func randomColumns(maxColumns int) map[string]Column {
+func randomColumns(maxColumns int, enums []Enum) map[string]Column {
 	columns := map[string]Column{}
-	numColumns := rand.Intn(maxColumns) + 1
 
+	numColumns := rand.Intn(maxColumns) + 1
 	for i := 0; i < numColumns; i++ {
 		attrName := randomColumnName()
 		attrType, attrLength, attrDefault := randomDataType()
+
+		// weird extra handling needed for enum types
+		if attrType == "[ENUM]" {
+			randomEnumIndex := rand.Intn(len(enums))
+			attrType = enums[randomEnumIndex].Name
+			attrDefault = "'" + enums[randomEnumIndex].Values[0] + "'"
+		}
 
 		columns[attrName] = Column{
 			Name:     attrName,

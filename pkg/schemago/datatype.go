@@ -23,6 +23,7 @@ var dataTypesRandomMap = common.WeightedRandomMap[string]{
 	"TIMESTAMP":   5,
 	"TIMESTAMPTZ": 10,
 	"UUID":        10,
+	"[ENUM]":      15,
 }
 
 func randomDataType() (string, int, string) {

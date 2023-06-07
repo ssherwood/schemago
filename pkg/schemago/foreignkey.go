@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"sort"
 	"strings"
 )
 
@@ -77,4 +78,10 @@ func randomColumn(columns map[string]Column) (Column, error) {
 	}
 
 	return columns[arr[rand.Intn(len(arr))]], nil
+}
+
+func sortForeignKeysByName(foreignKeys []ForeignKey) {
+	sort.Slice(foreignKeys, func(i, j int) bool {
+		return foreignKeys[i].ChildTableName < foreignKeys[j].ChildTableName
+	})
 }
