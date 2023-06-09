@@ -12,7 +12,6 @@ type Index struct {
 
 func randomIndexes(tableName string, attributes map[string]Column) []Index {
 	var indexes []Index
-
 	for _, v := range attributes {
 		// TODO make this randomized
 		if v.Type == "VARCHAR" {
@@ -24,6 +23,5 @@ func randomIndexes(tableName string, attributes map[string]Column) []Index {
 			})
 		}
 	}
-
 	return indexes
 }

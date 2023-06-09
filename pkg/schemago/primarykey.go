@@ -28,10 +28,8 @@ func primaryKeyNames(primaryKeys []PrimaryKey, sorted bool) []string {
 
 func randomPrimaryKey() []PrimaryKey {
 	var primaryKeys []PrimaryKey
-
 	for i := 0; i < randomNumberOfPrimaryKeys(); i++ {
 		dataType := randomPrimaryKeyDataType()
-
 		primaryKeys = append(primaryKeys, PrimaryKey{
 			Name:    randomPrimaryKeyName(i),
 			Type:    dataType,
@@ -39,7 +37,6 @@ func randomPrimaryKey() []PrimaryKey {
 			Default: randomPrimaryKeyDefaultExpression(dataType),
 		})
 	}
-
 	return primaryKeys
 }
 
@@ -60,7 +57,6 @@ func randomPrimaryKeyName(i int) (name string) {
 	} else {
 		name = fmt.Sprintf("%s_id", randomDescriptor(1, ""))
 	}
-
 	return
 }
 
@@ -70,7 +66,6 @@ func randomPrimaryKeyDataType() (dataType string) {
 	} else {
 		dataType = "UUID"
 	}
-
 	return
 }
 
@@ -87,8 +82,7 @@ func randomPrimaryKeyDefaultExpression(dataType string) (defaultExpression strin
 			defaultExpression = "0"
 		}
 	case "UUID":
-		// TODO ensure uuid-ossp extension
+		// TODO ensure uuid-ossp extension?
 	}
-
 	return
 }

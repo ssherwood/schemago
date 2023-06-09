@@ -39,7 +39,10 @@ func randomColumns(maxColumns int, enums []Enum) map[string]Column {
 		if attrType == "[ENUM]" {
 			randomEnumIndex := rand.Intn(len(enums))
 			attrType = enums[randomEnumIndex].Name
-			attrDefault = "'" + enums[randomEnumIndex].Values[0] + "'"
+			for key := range enums[randomEnumIndex].Values {
+				attrDefault = "'" + key + "'"
+				break // stop after the first one found
+			}
 		}
 
 		columns[attrName] = Column{

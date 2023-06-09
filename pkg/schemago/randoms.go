@@ -2,6 +2,7 @@ package schemago
 
 import (
 	"github.com/Pallinder/go-randomdata"
+	"math"
 	"math/rand"
 	"strings"
 )
@@ -20,4 +21,8 @@ func randomDescriptor(words int, separator string) string {
 
 func percentChance(percent int) bool {
 	return rand.Intn(100) < percent
+}
+
+func randomPow2(maxExponent int) int {
+	return int(math.Pow(2.0, float64(rand.Intn(maxExponent+1))))
 }

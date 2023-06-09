@@ -7,16 +7,20 @@ type Schema struct {
 	ForeignKeys []ForeignKey
 }
 
-// CreateSchema generates a certain number of tables with randomized columns and data types.
-// provide the numTables to generate and the max possible number of columns on any one table.
+// CreateSchema generates a certain number of tables with randomized columnsSQL and data types.
+// provide the numTables to generate and the max possible number of columnsSQL on any one table.
 func CreateSchema(numTables int, maxColumns int) Schema {
 	enums := randomEnums(10)
 	tables := randomTables(numTables, maxColumns, enums)
 
 	return Schema{
-		Name:        "public",
+		Name:        randomSchemaName(),
 		Enums:       enums,
 		Tables:      tables,
 		ForeignKeys: generateForeignKeys(tables, 30),
 	}
+}
+
+func randomSchemaName() string {
+	return randomDescriptor(1, "")
 }

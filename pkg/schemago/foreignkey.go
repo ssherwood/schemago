@@ -1,7 +1,6 @@
 package schemago
 
 import (
-	"errors"
 	"fmt"
 	"math/rand"
 	"sort"
@@ -63,21 +62,6 @@ func generateForeignKeys(tables []Table, percentage int) []ForeignKey {
 	}
 
 	return foreignKeys
-}
-
-func randomColumn(columns map[string]Column) (Column, error) {
-	var arr []string
-	for k, v := range columns {
-		if v.Type == "VARCHAR" || v.Type == "BIGINT" || v.Type == "UUID" {
-			arr = append(arr, k)
-		}
-	}
-
-	if len(arr) == 0 {
-		return Column{}, errors.New("no suitable columns")
-	}
-
-	return columns[arr[rand.Intn(len(arr))]], nil
 }
 
 func sortForeignKeysByName(foreignKeys []ForeignKey) {

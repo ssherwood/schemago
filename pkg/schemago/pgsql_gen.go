@@ -3,6 +3,7 @@ package schemago
 import (
 	"fmt"
 	"io"
+	"schemago/pkg/common"
 	"strings"
 )
 
@@ -15,6 +16,13 @@ const createForeignKeyFmt string = "ALTER TABLE %s.%s ADD CONSTRAINT %s FOREIGN 
 // WriteSQLStatements prints all the DDL needed to create the schema in the target database (today that is just
 // PostgresSQL).
 func WriteSQLStatements(writer io.Writer, schema Schema) error {
+
+	// TODO log preamble comments
+
+	if _, err := fmt.Fprintf(writer, "CREATE SCHEMA IF NOT EXISTS %s;\n\n", schema.Name); err != nil {
+		return err
+	}
+
 	if err := writeCreateTypeEnums(writer, schema.Name, schema.Enums); err != nil {
 		return err
 	}
@@ -33,7 +41,8 @@ func WriteSQLStatements(writer io.Writer, schema Schema) error {
 func writeCreateTypeEnums(output io.Writer, schemaName string, enums []Enum) error {
 	sortEnumsByName(enums)
 	for _, e := range enums {
-		_, err := fmt.Fprintf(output, createEnumFmt, schemaName, e.Name, "'"+strings.Join(e.Values, "', '")+"'")
+		enumValues := common.MapKeys(e.Values)
+		_, err := fmt.Fprintf(output, createEnumFmt, schemaName, e.Name, "'"+strings.Join(enumValues, "', '")+"'")
 		if err != nil {
 			return err
 		}
@@ -51,7 +60,7 @@ func writeCreateTypeEnums(output io.Writer, schemaName string, enums []Enum) err
 func writeCreateTables(writer io.Writer, schemaName string, tables []Table) error {
 	// TODO should we sort these?
 	for _, table := range tables {
-		_, err := fmt.Fprintf(writer, createTableFmt, schemaName, table.Name, primaryKeys(table), columns(table), primaryKeyConstraints(table))
+		_, err := fmt.Fprintf(writer, createTableFmt, schemaName, table.Name, primaryKeysSQL(table), columnsSQL(table), primaryKeyConstraints(table))
 		if err != nil {
 			return err
 		}
@@ -115,7 +124,7 @@ func writeAlterTableAddConstraints(output io.Writer, schemaName string, foreignK
 	return nil
 }
 
-func primaryKeys(table Table) (sql string) {
+func primaryKeysSQL(table Table) (sql string) {
 	if len(table.PrimaryKeys) == 1 {
 		sql += fmt.Sprintf("\t%s %s PRIMARY KEY,\n", table.PrimaryKeys[0].Name, table.PrimaryKeys[0].Type)
 	} else {
@@ -126,7 +135,7 @@ func primaryKeys(table Table) (sql string) {
 	return
 }
 
-func columns(table Table) (sql string) {
+func columnsSQL(table Table) (sql string) {
 	currentItem := 0
 	for _, col := range table.Columns {
 		sql += fmt.Sprintf("\t%s %s", col.Name, col.Type)
