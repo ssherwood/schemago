@@ -6,12 +6,13 @@ import (
 )
 
 type Column struct {
-	Name     string
-	Type     string
-	Length   int
-	Default  string
-	Nullable bool
-	Unique   bool
+	Name         string
+	Type         string
+	Length       int
+	Default      string
+	Nullable     bool
+	Unique       bool
+	SchemaNeeded bool
 }
 
 func columnsByName(columns []Column, sorted bool) []string {
@@ -34,9 +35,11 @@ func randomColumns(maxColumns int, enums []Enum) map[string]Column {
 	for i := 0; i < numColumns; i++ {
 		attrName := randomColumnName()
 		attrType, attrLength, attrDefault := randomDataType()
+		schemaNeeded := false
 
 		// weird extra handling needed for enum types
 		if attrType == "[ENUM]" {
+			schemaNeeded = true
 			randomEnumIndex := rand.Intn(len(enums))
 			attrType = enums[randomEnumIndex].Name
 			for key := range enums[randomEnumIndex].Values {
@@ -46,11 +49,12 @@ func randomColumns(maxColumns int, enums []Enum) map[string]Column {
 		}
 
 		columns[attrName] = Column{
-			Name:     attrName,
-			Type:     attrType,
-			Length:   attrLength,
-			Default:  attrDefault,
-			Nullable: randomNullable(attrType),
+			Name:         attrName,
+			Type:         attrType,
+			Length:       attrLength,
+			Default:      attrDefault,
+			Nullable:     randomNullable(attrType),
+			SchemaNeeded: schemaNeeded,
 		}
 	}
 

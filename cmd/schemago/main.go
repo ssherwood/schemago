@@ -12,6 +12,7 @@ import (
 func main() {
 	numTables := flag.Int("tables", 10, "Number of tables to generate")
 	maxColumns := flag.Int("columns", 10, "Maximum number of columns to generate per table")
+	schemaName := flag.String("schema", "random", "Schema name to use instead of random")
 	flag.Parse()
 
 	//go func() {
@@ -30,7 +31,7 @@ func main() {
 	//}
 	//defer pprof.StopCPUProfile()
 
-	schema := schemago.CreateSchema(*numTables, *maxColumns)
+	schema := schemago.CreateSchema(*schemaName, *numTables, *maxColumns)
 
 	err := schemago.WriteSQLStatements(os.Stdout, schema)
 	if err != nil {

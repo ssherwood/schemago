@@ -60,7 +60,7 @@ func writeCreateTypeEnums(output io.Writer, schemaName string, enums []Enum) err
 func writeCreateTables(writer io.Writer, schemaName string, tables []Table) error {
 	// TODO should we sort these?
 	for _, table := range tables {
-		_, err := fmt.Fprintf(writer, createTableFmt, schemaName, table.Name, primaryKeysSQL(table), columnsSQL(table), primaryKeyConstraints(table))
+		_, err := fmt.Fprintf(writer, createTableFmt, schemaName, table.Name, primaryKeysSQL(table), columnsSQL(schemaName, table), primaryKeyConstraints(table))
 		if err != nil {
 			return err
 		}
@@ -135,10 +135,15 @@ func primaryKeysSQL(table Table) (sql string) {
 	return
 }
 
-func columnsSQL(table Table) (sql string) {
+func columnsSQL(schemaName string, table Table) (sql string) {
 	currentItem := 0
 	for _, col := range table.Columns {
-		sql += fmt.Sprintf("\t%s %s", col.Name, col.Type)
+		if col.SchemaNeeded {
+			// odd use case for enum types needing schema scope
+			sql += fmt.Sprintf("\t%s %s.%s", col.Name, schemaName, col.Type)
+		} else {
+			sql += fmt.Sprintf("\t%s %s", col.Name, col.Type)
+		}
 
 		if col.Length > 0 {
 			sql += fmt.Sprintf("(%d)", col.Length)
