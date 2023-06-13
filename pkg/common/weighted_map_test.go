@@ -16,7 +16,7 @@ func TestWeightedRandomMap_AddValue(t *testing.T) {
 			for _, arg := range tt.args {
 				tt.weightedMap.AddValue(arg.value, arg.weight)
 			}
-			if got := tt.weightedMap.totalWeight(); got != tt.wanted {
+			if got := tt.weightedMap.TotalWeight(); got != tt.wanted {
 				t.Errorf("after AddValue() totalWeight() = %v, wanted %v", got, tt.wanted)
 			}
 		})
@@ -34,7 +34,7 @@ func TestWeightedRandomMap_totalWeight(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.weightedMap.totalWeight(); got != tt.wanted {
+			if got := tt.weightedMap.TotalWeight(); got != tt.wanted {
 				t.Errorf("totalWeight() = %v, wanted %v", got, tt.wanted)
 			}
 		})

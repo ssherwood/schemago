@@ -1,6 +1,7 @@
 package schemago
 
 import (
+	"fmt"
 	"math/rand"
 	"sort"
 )
@@ -43,7 +44,7 @@ func randomColumns(maxColumns int, enums []Enum) map[string]Column {
 			randomEnumIndex := rand.Intn(len(enums))
 			attrType = enums[randomEnumIndex].Name
 			for key := range enums[randomEnumIndex].Values {
-				attrDefault = "'" + key + "'"
+				attrDefault = fmt.Sprintf("'%s'", key)
 				break // stop after the first one found
 			}
 		}

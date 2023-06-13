@@ -10,6 +10,8 @@ import (
 const commaSeparator string = ", "
 const createEnumFmt string = "CREATE TYPE %s.%s as ENUM(%s);\n"
 const createTableFmt string = "CREATE TABLE IF NOT EXISTS %s.%s(\n%s%s%s\n);\n\n"
+const primaryKeyFmt = "\t%s %s PRIMARY KEY,\n"
+const columnTypeFmt = "\t%s %s,\n"
 const createIndexFmt string = "CREATE %sINDEX %s ON %s.%s(%s);\n"
 const createForeignKeyFmt string = "ALTER TABLE %s.%s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s.%s(%s);\n"
 
@@ -124,50 +126,53 @@ func writeAlterTableAddConstraints(output io.Writer, schemaName string, foreignK
 	return nil
 }
 
-func primaryKeysSQL(table Table) (sql string) {
+func primaryKeysSQL(table Table) string {
+	var sb strings.Builder
 	if len(table.PrimaryKeys) == 1 {
-		sql += fmt.Sprintf("\t%s %s PRIMARY KEY,\n", table.PrimaryKeys[0].Name, table.PrimaryKeys[0].Type)
+		_, _ = fmt.Fprintf(&sb, primaryKeyFmt, table.PrimaryKeys[0].Name, table.PrimaryKeys[0].Type)
 	} else {
 		for _, pk := range table.PrimaryKeys {
-			sql += fmt.Sprintf("\t%s %s,\n", pk.Name, pk.Type)
+			_, _ = fmt.Fprintf(&sb, columnTypeFmt, pk.Name, pk.Type)
 		}
 	}
-	return
+	return sb.String()
 }
 
-func columnsSQL(schemaName string, table Table) (sql string) {
+func columnsSQL(schemaName string, table Table) string {
+	var sb strings.Builder
 	currentItem := 0
 	for _, col := range table.Columns {
 		if col.SchemaNeeded {
 			// odd use case for enum types needing schema scope
-			sql += fmt.Sprintf("\t%s %s.%s", col.Name, schemaName, col.Type)
+			_, _ = fmt.Fprintf(&sb, "\t%s %s.%s", col.Name, schemaName, col.Type)
 		} else {
-			sql += fmt.Sprintf("\t%s %s", col.Name, col.Type)
+			_, _ = fmt.Fprintf(&sb, "\t%s %s", col.Name, col.Type)
 		}
 
 		if col.Length > 0 {
-			sql += fmt.Sprintf("(%d)", col.Length)
+			_, _ = fmt.Fprintf(&sb, "(%d)", col.Length)
 		}
 
 		// constraints
 		if !col.Nullable {
-			sql += " NOT NULL"
+			sb.WriteString(" NOT NULL")
 		}
 
 		if len(col.Default) > 0 {
-			sql += fmt.Sprintf(" DEFAULT %s", col.Default)
+			_, _ = fmt.Fprintf(&sb, " DEFAULT %s", col.Default)
 		}
 
 		if col.Unique {
-			sql += fmt.Sprintf(" UNIQUE")
+			sb.WriteString(" UNIQUE")
 		}
 
 		currentItem += 1
 		if currentItem != len(table.Columns) {
-			sql += ",\n"
+			sb.WriteString(",\n")
 		}
 	}
-	return
+
+	return sb.String()
 }
 
 func primaryKeyConstraints(table Table) (sql string) {
@@ -178,7 +183,7 @@ func primaryKeyConstraints(table Table) (sql string) {
 			pkNames = append(pkNames, pk.Name)
 		}
 
-		sql += fmt.Sprintf(",\n\tPRIMARY KEY(%s)", strings.Join(pkNames, ","))
+		sql = fmt.Sprintf(",\n\tPRIMARY KEY(%s)", strings.Join(pkNames, ","))
 	}
 
 	return
