@@ -43,7 +43,7 @@ func WriteSQLStatements(writer io.Writer, schema Schema) error {
 func writeCreateTypeEnums(output io.Writer, schemaName string, enums []Enum) error {
 	sortEnumsByName(enums)
 	for _, e := range enums {
-		enumValues := common.MapKeys(e.Values)
+		enumValues := common.KeysOfMap(e.Values)
 		_, err := fmt.Fprintf(output, createEnumFmt, schemaName, e.Name, "'"+strings.Join(enumValues, "', '")+"'")
 		if err != nil {
 			return err

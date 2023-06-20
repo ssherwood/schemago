@@ -2,6 +2,7 @@ package schemago
 
 import (
 	"math/rand"
+	"schemago/pkg/common"
 	"sort"
 	"strings"
 )
@@ -53,6 +54,12 @@ func randomEnumValues(maxEnumValues int) map[string]empty {
 		enumValues[value] = empty{}
 	}
 	return enumValues
+}
+
+// randomEnumDefault returns a random value entry
+func randomEnumDefault(enums Enum) (attrDefault string) {
+	values := common.KeysOfMap(enums.Values)
+	return values[rand.Intn(len(values))]
 }
 
 // sortEnumsByName modifies the slice to order the entries by name alphabetically.

@@ -40,13 +40,10 @@ func randomColumns(maxColumns int, enums []Enum) map[string]Column {
 
 		// weird extra handling needed for enum types
 		if attrType == "[ENUM]" {
+			randomEnum := enums[rand.Intn(len(enums))]
 			schemaNeeded = true
-			randomEnumIndex := rand.Intn(len(enums))
-			attrType = enums[randomEnumIndex].Name
-			for key := range enums[randomEnumIndex].Values {
-				attrDefault = fmt.Sprintf("'%s'", key)
-				break // stop after the first one found
-			}
+			attrType = randomEnum.Name
+			attrDefault = fmt.Sprintf("'%s'", randomEnumDefault(randomEnum))
 		}
 
 		columns[attrName] = Column{
