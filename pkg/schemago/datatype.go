@@ -6,6 +6,9 @@ import (
 	"strings"
 )
 
+// TODO Plan to rework this and make datatypes a struct with more settings and functions -
+// this will help clean up the ugliness that enums have caused
+
 // use a weighted randomized map to determine relative probability of the data types to occur
 var dataTypesRandomMap = common.WeightedRandomMap[string]{
 	"BIGINT":      5,
@@ -21,7 +24,6 @@ var dataTypesRandomMap = common.WeightedRandomMap[string]{
 	"TIMESTAMP":   5,
 	"TIMESTAMPTZ": 15,
 	"UUID":        10,
-	"[ENUM]":      10,
 }
 
 // randomDataType returns a weighted selection from the dataTypesRandomMap, this includes the

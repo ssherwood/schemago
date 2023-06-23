@@ -16,12 +16,14 @@ $ go build -v ./cmd/schemago
 ## Usage
 
 ```shell
-$ schemago [-tables n] [-columns m]
+$ schemago [-tables n] [-columns m] [-enums=true|false] [-schema <name>]
 ```
 ### Options
 
 - `-tables` will generate the specific number of tables
 - `-columns` will randomly generate up to this number of columns per table
+- `-schema` will override the default random schema name with the one specified
+- `-enums=` enable or disable enums during generation
 
 ## Details
 
@@ -43,4 +45,3 @@ Indexes and Foreign Keys are also generated with a randomized frequency on appro
   - Views
   - Constraints
   - Functions
-  - Enums

@@ -9,12 +9,18 @@ type Schema struct {
 
 // CreateSchema generates a certain number of tables with randomized columnsSQL and data types.
 // provide the numTables to generate and the max possible number of columnsSQL on any one table.
-func CreateSchema(schemaName string, numTables int, maxColumns int) Schema {
+func CreateSchema(config Config) Schema {
+	schemaName := config.DefaultSchemaName
 	if schemaName == "random" {
 		schemaName = randomSchemaName()
 	}
-	enums := randomEnums(10)
-	tables := randomTables(numTables, maxColumns, enums)
+
+	var enums []Enum
+	if config.EnumsEnabled {
+		enums = randomEnums(10)
+	}
+
+	tables := randomTables(config.NumberOfTables, config.MaximumNumberOfColumns, enums)
 
 	return Schema{
 		Name:        schemaName,
