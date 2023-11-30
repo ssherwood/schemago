@@ -29,34 +29,30 @@ func columnsByName(columns []Column, sorted bool) []string {
 	return columnNames
 }
 
-func randomColumns(maxColumns int, enums []Enum) map[string]Column {
+func randomColumns(maxColumns int, dataTypes DataTypes, enums []Enum) map[string]Column {
 	columns := map[string]Column{}
-
-	if len(enums) > 0 {
-		dataTypesRandomMap.AddValue("[ENUM]", 10)
-	}
 
 	numColumns := rand.Intn(maxColumns) + 1
 	for i := 0; i < numColumns; i++ {
 		attrName := randomColumnName()
-		attrType, attrLength, attrDefault := randomDataType()
-		schemaNeeded := false
+		dataType := dataTypes.randomDataType()
 
-		// weird extra handling needed for enum types
-		if attrType == "[ENUM]" {
+		if dataType.Name == "[ENUM]" {
+			if len(enums) == 0 {
+				continue // this will skip enums
+			}
 			randomEnum := enums[rand.Intn(len(enums))]
-			schemaNeeded = true
-			attrType = randomEnum.Name
-			attrDefault = fmt.Sprintf("'%s'", randomEnumDefault(randomEnum))
+			dataType.Name = randomEnum.Name
+			dataType.DefaultExpression = fmt.Sprintf("'%s'", randomEnumDefault(randomEnum))
 		}
 
 		columns[attrName] = Column{
 			Name:         attrName,
-			Type:         attrType,
-			Length:       attrLength,
-			Default:      attrDefault,
-			Nullable:     randomNullable(attrType),
-			SchemaNeeded: schemaNeeded,
+			Type:         dataType.Name,
+			Length:       dataType.randomMaxLength(),
+			Default:      dataType.randomDefaultExpression(),
+			Nullable:     dataType.randomNullable(),
+			SchemaNeeded: dataType.PrependSchema,
 		}
 	}
 

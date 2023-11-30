@@ -10,6 +10,9 @@ type Schema struct {
 // CreateSchema generates a certain number of tables with randomized columnsSQL and data types.
 // provide the numTables to generate and the max possible number of columnsSQL on any one table.
 func CreateSchema(config Config) Schema {
+
+	dataTypes := LoadDataTypes(config.SQLType)
+
 	schemaName := config.DefaultSchemaName
 	if schemaName == "random" {
 		schemaName = randomSchemaName()
@@ -20,7 +23,7 @@ func CreateSchema(config Config) Schema {
 		enums = randomEnums(10)
 	}
 
-	tables := randomTables(config.NumberOfTables, config.MaximumNumberOfColumns, enums)
+	tables := randomTables(config, dataTypes, enums)
 
 	return Schema{
 		Name:        schemaName,

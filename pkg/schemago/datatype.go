@@ -1,74 +1,79 @@
 package schemago
 
 import (
-	"schemago/pkg/common"
-	"strconv"
-	"strings"
+	"gopkg.in/yaml.v3"
+	"log"
+	"math/rand"
 )
 
-// TODO Plan to rework this and make datatypes a struct with more settings and functions -
-// this will help clean up the ugliness that enums have caused
-
-// use a weighted randomized map to determine relative probability of the data types to occur
-var dataTypesRandomMap = common.WeightedRandomMap[string]{
-	"BIGINT":      5,
-	"BIT":         3,
-	"BOOLEAN":     15,
-	"VARCHAR":     45,
-	"DATE":        10,
-	"INTEGER":     15,
-	"JSONB":       10,
-	"REAL":        3,
-	"SMALLINT":    5,
-	"TEXT":        20,
-	"TIMESTAMP":   5,
-	"TIMESTAMPTZ": 15,
-	"UUID":        10,
-}
-
-// randomDataType returns a weighted selection from the dataTypesRandomMap, this includes the
-// name of the data type itself, its maximum length (if it has one) and a possible default
-// expression.
-func randomDataType() (string, int, string) {
-	dataType := dataTypesRandomMap.RandomValue()
-	maxLength := randomMaxLength(dataType)
-	defaultExpression := randomDefaultExpression(dataType)
-	return dataType, maxLength, defaultExpression
-}
-
-func randomMaxLength(dataType string) (maxLength int) {
-	switch dataType {
-	case "BIT":
-		maxLength = randomPow2(8)
-	case "VARCHAR":
-		maxLength = randomPow2(16)
-	}
-	return
-}
-
-func randomDefaultExpression(dataType string) (defaultExpression string) {
-	switch dataType {
-	case "DATE", "TIMESTAMP", "TIMESTAMPTZ":
-		defaultExpression = "NOW()"
-	case "BOOLEAN":
-		defaultExpression = strings.ToUpper(strconv.FormatBool(percentChance(50)))
-	case "INTEGER":
-		if percentChance(25) {
-			defaultExpression = "0"
-		}
-	case "JSONB":
-		if percentChance(50) {
-			defaultExpression = "'{}'"
+func LoadDataTypes(dbId string) DataTypes {
+	var dataTypes DataTypes
+	switch dbId {
+	case "yugabytedb-ysql":
+		if err := yaml.Unmarshal([]byte(yugabyteDBYSQLDataTypesConfig), &dataTypes); err != nil {
+			log.Fatalf("error: %v", err)
+			return dataTypes
 		}
 	}
-	return
+
+	// calculate the distribution totalWeight
+	totalWeight := 0
+	for _, v := range dataTypes.DataTypes {
+		totalWeight += v.DistributionWeight
+	}
+	dataTypes.TotalWeight = totalWeight
+
+	return dataTypes
 }
 
-func randomNullable(dataType string) bool {
-	nullable := percentChance(25)
-	switch dataType {
-	case "BOOLEAN":
-		nullable = false
+type DataTypes struct {
+	Source      string     `yaml:"database"`
+	DataTypes   []DataType `yaml:"dataTypes"`
+	TotalWeight int
+}
+
+func (dts DataTypes) randomDataType() DataType {
+	cumulativeWeight := 0
+	targetWeight := rand.Intn(dts.TotalWeight)
+
+	for i, dt := range dts.DataTypes {
+		cumulativeWeight += dt.DistributionWeight
+		if cumulativeWeight > targetWeight {
+			return dts.DataTypes[i]
+		}
 	}
-	return nullable
+
+	// else?
+	return dts.DataTypes[0]
+}
+
+type DataType struct {
+	Name                string `yaml:"name"`
+	MaxLengthRandomPow  int    `yaml:"maxLengthRandomPow"`
+	NullablePercentage  int    `yaml:"nullablePercentage"`
+	DefaultedPercentage int    `yaml:"defaultedPercentage"`
+	DefaultExpression   string `yaml:"defaultExpression"`
+	ValuesQuoted        bool   `yaml:"valuesQuoted"`
+	DistributionWeight  int    `yaml:"distributionWeight"`
+	PrependSchema       bool   `yaml:"prependSchema"`
+}
+
+func (dt DataType) randomMaxLength() int {
+	if dt.MaxLengthRandomPow > 0 {
+		return randomPow2(dt.MaxLengthRandomPow)
+	}
+
+	return 0
+}
+
+func (dt DataType) randomNullable() bool {
+	return percentChance(dt.NullablePercentage)
+}
+
+func (dt DataType) randomDefaultExpression() string {
+	if dt.DefaultedPercentage > 0 {
+		return dt.DefaultExpression
+	}
+
+	return ""
 }
