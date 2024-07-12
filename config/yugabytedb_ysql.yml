@@ -1,10 +1,11 @@
+# Paste this into the target yugabytedb_ysql.go file
 source: yugabytedb-ysql
 dataTypes:
   - name: "BIGINT"
     maxLengthRandomPow: 0
     nullablePercentage: 25
     defaultedPercentage: 50
-    defaultExpression: "0"
+    defaultExpression: "b'0'"
     valuesQuoted: false
     prependSchema: false
     distributionWeight: 5

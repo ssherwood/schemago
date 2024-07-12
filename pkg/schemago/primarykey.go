@@ -13,19 +13,6 @@ type PrimaryKey struct {
 	Default string
 }
 
-func primaryKeyNames(primaryKeys []PrimaryKey, sorted bool) []string {
-	var names []string
-	for _, v := range primaryKeys {
-		names = append(names, v.Name)
-	}
-
-	if sorted {
-		sort.Strings(names)
-	}
-
-	return names
-}
-
 func randomPrimaryKey() []PrimaryKey {
 	var primaryKeys []PrimaryKey
 	for i := 0; i < randomNumberOfPrimaryKeys(); i++ {
@@ -38,6 +25,19 @@ func randomPrimaryKey() []PrimaryKey {
 		})
 	}
 	return primaryKeys
+}
+
+func primaryKeyNames(primaryKeys []PrimaryKey, sorted bool) []string {
+	var names []string
+	for _, v := range primaryKeys {
+		names = append(names, v.Name)
+	}
+
+	if sorted {
+		sort.Strings(names)
+	}
+
+	return names
 }
 
 func randomNumberOfPrimaryKeys() int {
@@ -69,7 +69,7 @@ func randomPrimaryKeyDataType() (dataType string) {
 	return
 }
 
-func randomPrimaryKeyLength(dataType string) int {
+func randomPrimaryKeyLength(_dataType string) int {
 	return 0
 }
 

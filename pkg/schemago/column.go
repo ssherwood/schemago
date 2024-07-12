@@ -13,6 +13,7 @@ type Column struct {
 	Default      string
 	Nullable     bool
 	Unique       bool
+	Quoted       bool
 	SchemaNeeded bool
 }
 
@@ -52,6 +53,7 @@ func randomColumns(maxColumns int, dataTypes DataTypes, enums []Enum) map[string
 			Length:       dataType.randomMaxLength(),
 			Default:      dataType.randomDefaultExpression(),
 			Nullable:     dataType.randomNullable(),
+			Quoted:       dataType.ValuesQuoted,
 			SchemaNeeded: dataType.PrependSchema,
 		}
 	}
